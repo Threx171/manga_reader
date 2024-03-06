@@ -1,71 +1,34 @@
 import 'package:flutter/material.dart';
-import 'layout_sidebar.dart';
-import 'layout_library.dart';
+import 'package:provider/provider.dart';
+import 'appData.dart';
+import 'app.dart';
+import 'dart:io' show Platform;
+import 'package:window_manager/window_manager.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        canvasColor: const Color(0xFF1E1E2C),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Manga Reader'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _selectedIndex = 0;
-
-  static const List<Widget> _widgetOptions = <Widget>[
-    LayoutLibrary(),
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+void main() async {
+  // For Linux, macOS and Windows, initialize WindowManager
+  try {
+    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      WidgetsFlutterBinding.ensureInitialized();
+      await WindowManager.instance.ensureInitialized();
+      windowManager.waitUntilReadyToShow().then(showWindow);
+    }
+  } catch (e) {
+    // ignore: avoid_print
+    print(e);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: ThemeData.dark().colorScheme.background,
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-              icon: Icon(Icons.book_outlined), label: 'Library'),
-          BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Favorites'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.download), label: 'Downloads'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.extension), label: 'Extensions'),
-        ],
-        currentIndex: _selectedIndex,
-        unselectedItemColor: Colors.grey,
-        selectedItemColor: const Color.fromARGB(255, 57, 118, 209),
-        onTap: _onItemTapped,
-        backgroundColor: const Color(0xFF1E1E2C),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
+  // Define the app as a ChangeNotifierProvider
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => AppData(),
+      child: const App(),
+    ),
+  );
+}
+
+// Show the window when it's ready
+void showWindow(_) async {
+  windowManager.setMinimumSize(const Size(300.0, 600.0));
+  await windowManager.setTitle('App');
 }
